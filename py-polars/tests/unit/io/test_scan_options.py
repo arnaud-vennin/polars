@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 import io
 from datetime import datetime
 from typing import IO, TYPE_CHECKING, Any, Callable
