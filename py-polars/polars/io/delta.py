@@ -13,7 +13,6 @@ from polars.datatypes.convert import unpack_dtypes
 from polars.dependencies import _DELTALAKE_AVAILABLE, deltalake
 from polars.io.parquet import scan_parquet
 from polars.io.pyarrow_dataset.functions import scan_pyarrow_dataset
-from polars.io.scan_options import ScanCastOptions
 from polars.schema import Schema
 
 if TYPE_CHECKING:
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
 
     from polars import DataFrame, DataType, LazyFrame
     from polars.io.cloud import CredentialProviderFunction
+    from polars.io.scan_options import ScanCastOptions
 
 
 def read_delta(

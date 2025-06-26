@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import datetime
 import io
 from datetime import datetime
-from typing import IO, Any, Callable
+from typing import IO, TYPE_CHECKING, Any, Callable
 from zoneinfo import ZoneInfo
 
 import pytest
 
 import polars as pl
 from polars.testing import assert_frame_equal
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.mark.parametrize(
@@ -271,4 +275,34 @@ def test_scan_extra_columns(
     assert_frame_equal(
         scan_func(files, extra_columns="ignore").collect(),  # type: ignore[call-arg]
         pl.DataFrame({"a": [1, 2], "b": [1, 2]}),
+    )
+
+
+@pytest.fixture
+def delta_table_timestamp_path(io_files_path: Path) -> Path:
+    return io_files_path / "delta-table-timestamp"
+
+
+def test_cast_options_spark_timestamp(delta_table_timestamp_path: Path) -> None:
+    cast_options = pl.ScanCastOptions(datetime_cast="nanosecond-downcast")
+
+    output = pl.scan_delta(str(delta_table_timestamp_path), cast_options=cast_options)
+
+    data = {"dumb_column": ["dumb_value",
+                                    "dumb_value",
+                                    "dumb_value",
+                                    "dumb_value",
+                                    "dumb_value",],
+                    "gmv_recorded_at": [datetime(2015, 12, 27, 12, 40, 47, tzinfo=ZoneInfo("UTC")),
+                                        datetime(2015, 12, 11, 20, 14, 42, tzinfo=ZoneInfo("UTC")),
+                                        datetime(2015, 12, 10, 17, 53, 5, tzinfo=ZoneInfo("UTC")),
+                                        datetime(2015, 12, 14, 10, 51, 38, tzinfo=ZoneInfo("UTC")),
+                                        datetime(2016, 4, 11, 18, 55, 28, tzinfo=ZoneInfo("UTC"))]}
+
+    expected = pl.DataFrame(data, schema={"dumb_column": pl.String,
+                                          "gmv_recorded_at": pl.Datetime(time_unit="us", time_zone="UTC")})
+
+    assert_frame_equal(
+        output.collect(),
+        expected,
     )
